@@ -28,3 +28,14 @@ jupyter: container
 
 run_notebooks: jupyter
 	docker run --rm -p $(JUPYTER_PORT):8888 -v $(NOTEBOOKS_DIR):/notebooks $(JUPYTER_IMAGE_NAME):$(VERSION) jupyter notebook --notebook-dir=/notebooks --ip 0.0.0.0 --no-browser --allow-root
+
+gpu_container:
+	cd tensorflow/tensorflow/tools/dockerfiles && docker build --pull --build-arg TF_PACKAGE=tensorflow-gpu -t $(IMAGE_NAME) -f dockerfiles/nvidia.Dockerfile .
+	docker tag $(IMAGE_NAME) $(IMAGE_NAME):gpu-$(VERSION)
+
+gpu_jupyter: gpu_container
+	docker build --build-arg TF_VERSION=gpu-$(VERSION) -t $(JUPYTER_IMAGE_NAME) -f ${JUPYTER_DOCKER_FILE} .
+	docker tag $(JUPYTER_IMAGE_NAME) $(JUPYTER_IMAGE_NAME):gpu-$(VERSION)
+
+run_gpu_container: gpu_container
+    docker run --runtime nvidia --rm -it $(IMAGE_NAME):gpu-$(VERSION) /bin/bash
